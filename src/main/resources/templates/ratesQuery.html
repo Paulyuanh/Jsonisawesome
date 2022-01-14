@@ -1,0 +1,85 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Strict//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.css">
+
+<title>外匯匯率查詢</title>
+</head>
+<body>
+	<div id ="cri" style="text-align: center;margin:0 auto;width: 900px;">
+	<h1>外匯匯率</h1>
+	<a>幣別:</a>
+		<select class="curr">
+			<option value="USD">美金</option>
+			<option value="RMB">人民幣</option>
+			<option value="EUR">歐元</option>
+			<option value="JPY">日圓</option>
+			<option value="GBP">英鎊</option>
+		</select>
+	</div>
+	
+	<div id="table_refresh" style="text-align: center;margin:0 auto;width: 900px" th:fragment="table_refresh">
+    
+    <canvas id="myChart" width="400" height="400"></canvas>
+	</div>
+</body>
+<script type="text/javascript">
+
+	$('body').on('change','.curr',function(){
+		
+		var cur,curText;
+		$('select option:selected').each(function(){
+			cur = $(this).val();
+			curText = $(this).text();
+		});
+		
+		var search = {};
+		search["curr"] = cur;
+		
+		//取資料
+		$.ajax({
+	        type: "POST",
+	        contentType: "application/json",
+	        url: "getRates?"+$.param(search),
+	        dataType: 'json',
+	        cache: false,
+	        timeout: 600000,
+	        success: function (data) {
+	        	// x-axis數據 日期 y-axis數據 匯率 Background_color = [];
+	    		let ratedate = [],rate = [],background_color = [];
+	    		// 獲取canvas作為繪圖的上下文
+	    		let ctx = document.getElementById('myChart');
+		        $.each(data,function(index, element){
+		        	if(index % 2 == 0){
+		        		ratedate.push(element);
+                    }else{
+                    	rate.push(element);
+                    }
+		        	background_color[index] = "#FF0000";
+			    });
+		     	// 生成對應的圖表
+				var myChart = new Chart(ctx, {
+					type: 'line',
+					data: {
+						labels: ratedate,
+						datasets: [{
+							label: curText+'匯率',
+							data: rate,
+							fill: false, // 不顯示底下的灰色區塊
+							borderColor: "#666666", // 設定線的顏色
+	                        backgroundColor: background_color, // 設定點的顏色
+	                        lineTension: 0  // 顯示折線圖，不使用曲線
+							}]
+					}
+				});
+	        }
+	    });
+		
+// 		myChart.update();
+		
+	});
+</script>
+</html>
